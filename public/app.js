@@ -63,7 +63,6 @@ const sfx = (() => {
   return {
     unlock: ac,
     tick: () => tone(1200, 0.04, 'square', 0.04),
-    spinTick: () => tone(1800, 0.02, 'square', 0.025),
     kick: () => { tone(150, 0.2, 'sine', 0.6, 45); noise(0.08, 900, 0.3); },
     whistle: () => { tone(2700, 0.28, 'square', 0.035); setTimeout(() => tone(2700, 0.45, 'square', 0.035), 320); },
     cheer: () => { noise(2.4, 1100, 0.4, 0.4); noise(2.0, 2400, 0.15, 0.6); },
@@ -367,7 +366,7 @@ $('#readyBtn').onclick = () => {
 (function loop(now) {
   if (S && S.phase === 'select' && !animating) {
     const left = Math.max(0, endAt - now);
-    $('#timerBar').style.transform = `scaleX(${(left / (S.selectMs || 10000)).toFixed(3)})`;
+    $('#timerBar').style.transform = `scaleX(${(left / (S.selectMs || 20000)).toFixed(3)})`;
     $('#timerNum').textContent = Math.ceil(left / 1000);
     setKeeper(KEEPER_HOME.x + Math.sin(now / 380) * 7, KEEPER_HOME.y + Math.abs(Math.sin(now / 190)) * -2, 0);
   }
@@ -392,7 +391,6 @@ function tween(ms, fn, ease = easeOut) {
 function cancelAnim() {
   animToken++;
   animating = false;
-  $('#wheelBox').classList.add('hidden');
   $('#bigText').classList.remove('show');
   $('#confetti').innerHTML = '';
 }
@@ -425,77 +423,15 @@ async function playReveal(r) {
   sfx.whistle();
   const free = r.segments.filter((s) => s.type === 'goal').length;
   $('#status').textContent = free === 0 ? '😱 Kaleci hepsini kapattı!' : `${free} boş bölge → %${free * 25} gol şansı`;
-  await wait(1700); if (!alive()) return;
+  await wait(1600); if (!alive()) return;
 
-  // 2) şans çarkı
-  await spinWheel(r, alive); if (!alive()) return;
-  await wait(700); if (!alive()) return;
-  $('#wheelBox').classList.add('hidden');
-
-  // 3) şut animasyonu
+  // 2) şut animasyonu (sonuç sunucuda belirlendi)
   if (r.cell != null) cellEls[r.cell].setAttribute('class', cellEls[r.cell].getAttribute('class') + ' rv-hit');
   await shoot(r, alive); if (!alive()) return;
 
   animating = false;
   renderScore();
   if (S && S.phase === 'over') showOver();
-}
-
-function buildWheel(r) {
-  const R = 97;
-  let h = '';
-  r.segments.forEach((s, i) => {
-    const a0 = ((i * 90 - 90) * Math.PI) / 180, a1 = ((i * 90) * Math.PI) / 180;
-    const col = s.type === 'goal' ? '#16a34a' : s.type === 'save' ? '#2563eb' : '#52525b';
-    h += `<path d="M0 0 L${(R * Math.cos(a0)).toFixed(2)} ${(R * Math.sin(a0)).toFixed(2)} A${R} ${R} 0 0 1 ${(R * Math.cos(a1)).toFixed(2)} ${(R * Math.sin(a1)).toFixed(2)}Z" fill="${col}" stroke="#fff" stroke-width="2"/>`;
-    const mid = i * 90 - 45, m = (mid * Math.PI) / 180;
-    const lx = 58 * Math.cos(m), ly = 58 * Math.sin(m);
-    const icon = s.type === 'goal' ? '⚽' : s.type === 'save' ? '🧤' : '❌';
-    const lab = s.type === 'goal' ? 'GOL' : s.type === 'save' ? 'KURTARIŞ' : 'DIŞARI';
-    const sub = s.cell != null ? CELL_NAMES[s.cell] : 'Auta gider';
-    h += `<g transform="translate(${lx.toFixed(2)} ${ly.toFixed(2)}) rotate(${mid + 90})">
-      <text y="-12" font-size="20" text-anchor="middle">${icon}</text>
-      <text y="7" font-size="12.5" font-weight="900" fill="#fff" text-anchor="middle">${lab}</text>
-      <text y="20" font-size="9" fill="rgba(255,255,255,.85)" text-anchor="middle">${sub} · %25</text></g>`;
-  });
-  h += '<circle r="13" fill="#fff" stroke="#0f172a" stroke-width="3"/><circle r="4" fill="#facc15"/>';
-  $('#wheel').innerHTML = h;
-}
-
-async function spinWheel(r, alive) {
-  buildWheel(r);
-  const spin = $('#wheelSpin');
-  spin.style.transition = 'none';
-  spin.style.transform = 'rotate(0deg)';
-  $('#wheelResult').textContent = '';
-  $('#wheelBox').classList.remove('hidden');
-  void spin.offsetWidth;
-  await wait(250); if (!alive()) return;
-  const final = 360 * 6 - (45 + 90 * r.resultIndex) + rand(-30, 30);
-  const DUR = 3000;
-  spin.style.transition = `transform ${DUR}ms cubic-bezier(.12,.72,.16,1)`;
-  spin.style.transform = `rotate(${final}deg)`;
-  // tık sesleri (yavaşlayarak)
-  let lastSeg = -1;
-  const t0 = performance.now();
-  await new Promise((res) => {
-    (function f(now) {
-      if (!alive()) return res();
-      const m = getComputedStyle(spin).transform;
-      if (m && m !== 'none') {
-        const [a, b] = m.slice(7, -1).split(',').map(Number);
-        const ang = ((Math.atan2(b, a) * 180) / Math.PI + 360) % 360;
-        const seg = Math.floor(ang / 90);
-        if (seg !== lastSeg) { lastSeg = seg; sfx.spinTick(); }
-      }
-      if (now - t0 < DUR + 50) requestAnimationFrame(f); else res();
-    })(t0);
-  });
-  if (!alive()) return;
-  const seg = r.segments[r.resultIndex];
-  const res = $('#wheelResult');
-  res.textContent = seg.type === 'goal' ? `⚽ GOL → ${CELL_NAMES[seg.cell]}` : seg.type === 'save' ? `🧤 KURTARIŞ → ${CELL_NAMES[seg.cell]}` : '❌ DIŞARI!';
-  res.style.color = seg.type === 'goal' ? '#4ade80' : seg.type === 'save' ? '#60a5fa' : '#d4d4d8';
 }
 
 function diveFor(cell) {

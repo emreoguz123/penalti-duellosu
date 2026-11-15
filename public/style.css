@@ -120,18 +120,7 @@ input:focus { border-color: var(--gold); }
 .confetti i { position: absolute; top: -10px; width: 8px; height: 12px; border-radius: 2px; animation: fall linear forwards; }
 @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
 
-.wheelbox { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-  background: rgba(2,8,23,.72); backdrop-filter: blur(2px); border-radius: 16px; animation: fadein .25s; }
 @keyframes fadein { from { opacity: 0; } }
-.wheel-title { font-weight: 900; letter-spacing: 4px; color: var(--gold); margin-bottom: 14px; }
-.wheel-wrap { position: relative; width: min(70vw, 60vh, 260px); aspect-ratio: 1; }
-.wheel-spin { width: 100%; height: 100%; border-radius: 50%; box-shadow: 0 0 0 5px #fff, 0 0 0 9px #0f172a, 0 10px 30px rgba(0,0,0,.6); }
-.wheel-spin svg { width: 100%; height: 100%; display: block; }
-.pointer { position: absolute; left: 50%; top: -14px; transform: translateX(-50%); z-index: 2; width: 0; height: 0;
-  border-left: 14px solid transparent; border-right: 14px solid transparent; border-top: 26px solid var(--gold);
-  filter: drop-shadow(0 2px 2px rgba(0,0,0,.6)); }
-.wheel-result { font-size: 22px; font-weight: 900; min-height: 30px; }
-
 .overbox { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
   background: rgba(2,8,23,.85); border-radius: 16px; padding: 20px; animation: fadein .3s; }
 .overbox .btn { max-width: 300px; }

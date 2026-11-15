@@ -40,13 +40,13 @@ Sunucu `PORT` ortam değişkenini okur. HTTPS'i barındırma servisi sağlar; oy
 - Sağlık kontrolü: `GET /healthz`
 
 ## Kurallar
-- Kale 3×2 = 6 bölge. Kaleci 3, şutör 3 bölge seçer (10 sn ya da ikisi de Hazır).
-- Şans çarkı: şutörün 3 seçimi %25'er + %25 dışarı.
+- Kale 3×2 = 6 bölge. Kaleci 3, şutör 3 bölge seçer (20 sn ya da ikisi de Hazır).
+- Şans: şutörün 3 seçimi %25'er + %25 dışarı (arka planda hesaplanır, sonuç animasyonda görünür).
   Seçim kalecinin kapattığı bölgeyse kurtarış, boşsa gol.
 - 5'er atış, eşitlikte ani ölüm.
 
 ## Dosyalar
-- `server.js` – oda yönetimi, kurallar, çark sonucu (sunucu tarafında, hile yapılamaz)
+- `server.js` – oda yönetimi, kurallar, şut sonucu (sunucu tarafında, hile yapılamaz)
 - `public/` – arayüz, animasyonlar, sesler, ikonlar, manifest
 - `tools/make-icons.js` – ikon PNG'lerini yeniden üretir
 - `Dockerfile`, `render.yaml` – yayınlama ayarları

@@ -9,8 +9,8 @@ const { WebSocketServer } = require('ws');
 
 const PORT = Number(process.env.PORT) || 3000;
 const PUB = path.join(__dirname, 'public');
-const SELECT_MS = 10000;   // seçim süresi
-const REVEAL_MS = 9000;    // açıklama + çark + animasyon süresi
+const SELECT_MS = 20000;   // seçim süresi
+const REVEAL_MS = 6000;    // seçimlerin gösterilmesi + şut animasyonu
 const REGULATION = 5;      // normal atış sayısı (her takım)
 
 const MIME = {
