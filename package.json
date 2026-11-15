@@ -1,0 +1,16 @@
+{
+  "name": "penalti-duellosu",
+  "version": "0.1.0",
+  "description": "1v1 / 2v2 penaltı düellosu - tarayıcı ve mobil",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "private": true
+}

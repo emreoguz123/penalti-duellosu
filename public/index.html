@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a2e18">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Penaltı Düellosu</title>
+<meta name="description" content="Arkadaşlarınla 1v1 veya 2v2 penaltı düellosu. Kaleyi kapat, köşeyi seç, çarkı çevir!">
+<meta property="og:title" content="Penaltı Düellosu ⚽">
+<meta property="og:description" content="Arkadaşlarınla 1v1 veya 2v2 penaltı düellosu. Kaleyi kapat, köşeyi seç, çarkı çevir!">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="conn" class="conn hidden">Bağlantı koptu, yeniden bağlanılıyor…</div>
+<button id="sound" class="sound" aria-label="Ses">🔊</button>
+
+<div id="app">
+  <!-- ANA MENÜ -->
+  <section id="home" class="screen">
+    <h1 class="logo">⚽<br>PENALTI<span>DÜELLOSU</span></h1>
+    <input id="name" maxlength="14" placeholder="Adını yaz" autocomplete="off">
+    <div class="menu">
+      <button class="btn primary" data-create="1v1">1v1 Oda Kur</button>
+      <button class="btn primary" data-create="2v2">2v2 Oda Kur</button>
+      <button class="btn" data-create="bot">🤖 Bota Karşı Oyna</button>
+      <div class="join">
+        <input id="code" maxlength="4" placeholder="ODA KODU" autocomplete="off">
+        <button class="btn" id="joinBtn">Katıl</button>
+      </div>
+    </div>
+    <details class="rules">
+      <summary>Nasıl oynanır?</summary>
+      <ul>
+        <li>Kale 6 eşit bölgeye ayrılır.</li>
+        <li><b>Kaleci</b> 3 bölge seçer (kapatır), <b>şutör</b> 3 bölge seçer.</li>
+        <li>10 saniye dolunca ya da ikisi de <b>Hazır</b>a basınca şut çekilir.</li>
+        <li>Şans çarkı döner: şutörün her seçimi %25, dışarı %25.</li>
+        <li>Seçilen bölgeyi kaleci kapattıysa <b>kurtarış</b>, boşsa <b>gol</b>!</li>
+        <li>5'er atış, eşitlikte ani ölüm.</li>
+        <li>2v2'de her takımda bir şutör, bir kaleci vardır.</li>
+      </ul>
+    </details>
+  </section>
+
+  <!-- LOBİ -->
+  <section id="lobby" class="screen hidden">
+    <div class="lobby-head">
+      <div class="small">ODA KODU</div>
+      <div id="lobbyCode" class="bigcode">----</div>
+      <div id="lobbyMode" class="small"></div>
+      <button class="btn ghost" id="shareBtn">🔗 Davet linkini paylaş</button>
+    </div>
+    <div id="slots" class="slots"></div>
+    <div id="lobbyNotice" class="notice"></div>
+    <button class="btn primary" id="startBtn">Maçı Başlat</button>
+    <div id="waitNote" class="small center"></div>
+    <button class="btn ghost" id="leaveLobby">Odadan çık</button>
+  </section>
+
+  <!-- OYUN -->
+  <section id="game" class="screen hidden">
+    <div class="scoreboard">
+      <div class="team t0"><div class="tname" id="tn0">A</div><div class="dots" id="dots0"></div></div>
+      <div class="score"><span id="sc0">0</span><i>-</i><span id="sc1">0</span></div>
+      <div class="team t1"><div class="tname" id="tn1">B</div><div class="dots" id="dots1"></div></div>
+    </div>
+    <div class="statusbar">
+      <div id="status" class="status">…</div>
+      <div class="chips"><span id="chipS" class="chip">🎯 Şutör</span><span id="chipK" class="chip">🧤 Kaleci</span></div>
+      <div class="timer"><div id="timerBar"></div><span id="timerNum">10</span></div>
+    </div>
+
+    <div class="stage" id="stage">
+      <svg id="scene" viewBox="16 22 368 300" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#07122b"/><stop offset="1" stop-color="#1b3466"/>
+          </linearGradient>
+          <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2b8a3a"/><stop offset="1" stop-color="#1f6e2c"/>
+          </linearGradient>
+          <pattern id="netp" width="9" height="9" patternUnits="userSpaceOnUse">
+            <path d="M0 0L9 9M9 0L0 9" stroke="rgba(255,255,255,.38)" stroke-width=".8"/>
+          </pattern>
+          <radialGradient id="ballg" cx=".35" cy=".3" r=".75">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c9d1d9"/>
+          </radialGradient>
+        </defs>
+        <rect width="400" height="140" fill="url(#sky)"/>
+        <g id="crowd"></g>
+        <rect y="122" width="400" height="16" fill="#0b0f1a"/>
+        <rect y="138" width="400" height="192" fill="url(#grass)"/>
+        <g opacity=".12" fill="#000">
+          <rect y="160" width="400" height="22"/><rect y="204" width="400" height="28"/><rect y="262" width="400" height="34"/>
+        </g>
+        <path d="M0 180 H400 M40 180 L18 222 H382 L360 180" stroke="rgba(255,255,255,.75)" stroke-width="2" fill="none"/>
+        <circle cx="200" cy="292" r="3" fill="rgba(255,255,255,.85)"/>
+
+        <g id="net">
+          <polygon points="62,42 338,42 324,56 76,56" fill="url(#netp)"/>
+          <rect x="76" y="56" width="248" height="124" fill="url(#netp)"/>
+          <polygon points="62,42 76,56 76,180 62,180" fill="url(#netp)"/>
+          <polygon points="338,42 324,56 324,180 338,180" fill="url(#netp)"/>
+          <rect x="76" y="56" width="248" height="124" fill="rgba(0,0,0,.18)"/>
+        </g>
+
+        <g id="keeper" transform="translate(200,142)">
+          <path d="M-7 2 L-9 37 M7 2 L9 37" stroke="#1f2937" stroke-width="7" stroke-linecap="round"/>
+          <ellipse cx="-9" cy="38" rx="6" ry="3" fill="#111"/><ellipse cx="9" cy="38" rx="6" ry="3" fill="#111"/>
+          <rect x="-12" y="-5" width="24" height="12" rx="3" fill="#111827"/>
+          <path id="karms" d="M-12 -27 L-30 -45 M12 -27 L30 -45" stroke="#f59e0b" stroke-width="6.5" stroke-linecap="round"/>
+          <rect x="-14" y="-32" width="28" height="30" rx="7" fill="#f59e0b"/>
+          <text x="0" y="-11" text-anchor="middle" font-size="12" font-weight="900" fill="#7c2d12">1</text>
+          <circle cx="-31" cy="-47" r="6.5" fill="#fff" stroke="#334155" stroke-width="1.5"/>
+          <circle cx="31" cy="-47" r="6.5" fill="#fff" stroke="#334155" stroke-width="1.5"/>
+          <circle cx="0" cy="-41" r="9" fill="#e5b48c"/>
+          <path d="M-9 -43 Q0 -55 9 -43 Q4 -47 -9 -43Z" fill="#3f2a1d"/>
+        </g>
+
+        <g id="cells"></g>
+        <g id="marks"></g>
+
+        <g fill="#fff">
+          <rect x="56" y="36" width="6" height="146" rx="2"/>
+          <rect x="338" y="36" width="6" height="146" rx="2"/>
+          <rect x="56" y="36" width="288" height="6" rx="2"/>
+        </g>
+
+        <ellipse id="ballShadow" cx="200" cy="302" rx="12" ry="4" fill="rgba(0,0,0,.35)"/>
+        <g id="ball" transform="translate(200,292)">
+          <circle r="11" fill="url(#ballg)" stroke="#222" stroke-width="1"/>
+          <polygon points="0,-4.5 4.3,-1.4 2.6,3.6 -2.6,3.6 -4.3,-1.4" fill="#222"/>
+          <path d="M0 -4.5 L0 -10.5 M4.3 -1.4 L10 -3.3 M2.6 3.6 L6.2 8.6 M-2.6 3.6 L-6.2 8.6 M-4.3 -1.4 L-10 -3.3" stroke="#222" stroke-width="1"/>
+        </g>
+      </svg>
+
+      <div id="bigText" class="bigtext"></div>
+      <div id="confetti" class="confetti"></div>
+
+      <div id="wheelBox" class="wheelbox hidden">
+        <div class="wheel-title">ŞANS ÇARKI</div>
+        <div class="wheel-wrap">
+          <div class="pointer"></div>
+          <div id="wheelSpin" class="wheel-spin"><svg id="wheel" viewBox="-100 -100 200 200"></svg></div>
+        </div>
+        <div id="wheelResult" class="wheel-result"></div>
+      </div>
+
+      <div id="overBox" class="overbox hidden">
+        <div class="trophy">🏆</div>
+        <div id="overTitle" class="over-title"></div>
+        <div id="overScore" class="over-score"></div>
+        <button class="btn primary" id="rematchBtn">Rövanş</button>
+        <div id="rematchNote" class="small center"></div>
+        <button class="btn ghost" id="homeBtn">Ana menü</button>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div id="hint" class="hint"></div>
+      <button class="btn primary big" id="readyBtn" disabled>HAZIR</button>
+    </div>
+  </section>
+</div>
+
+<div id="toast" class="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
