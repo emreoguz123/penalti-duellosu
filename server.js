@@ -11,7 +11,8 @@ const PORT = Number(process.env.PORT) || 3000;
 const PUB = path.join(__dirname, 'public');
 const SELECT_MS = 20000;   // seçim süresi
 const REVEAL_MS = 6000;    // seçimlerin gösterilmesi + şut animasyonu
-const REGULATION = 5;      // normal atış sayısı (her takım)
+const REGULATION = 5;
+const KIT_COUNT = 5;       // forma sayısı (public/app.js KITS ile aynı)      // normal atış sayısı (her takım)
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -124,6 +125,7 @@ function view(room, pid) {
       pid: p.pid, name: p.name, team: p.team, role: p.role, bot: !!p.bot,
       connected: p.bot || sockets.has(p.pid),
     })),
+    kits: room.kits,
     score: room.score,
     kicks: room.kicks,
     shootingTeam: room.shootingTeam,
@@ -154,6 +156,7 @@ function createRoom(mode, host) {
     phase: 'lobby', score: [0, 0], kicks: [[], []], shootingTeam: 0,
     kickId: 0, seq: 0, sel: null, deadline: 0, timer: null,
     reveal: null, winner: null, notice: '',
+    kits: [0, 1],
   };
   rooms.set(room.code, room);
   return room;
@@ -328,9 +331,10 @@ function onMessage(ws, raw) {
         const r = createRoom(mode, { pid });
         addPlayer(r, pid, ws.name);
         if (mode === 'bot') {
-          addPlayer(r, 'bot' + randId(6), 'Robot Kaleci', true);
-          startGame(r);
-        } else broadcast(r);
+          addPlayer(r, 'bot' + randId(6), 'Robot', true);
+          r.kits[1] = 2;
+        }
+        broadcast(r);
         break;
       }
       case 'join': {
@@ -351,6 +355,16 @@ function onMessage(ws, raw) {
         if (!ok || slotTaken(room, m.team, m.role)) return;
         const p = room.players.get(pid);
         p.team = m.team; p.role = m.role;
+        broadcast(room);
+        break;
+      }
+      case 'kit': {
+        if (!room || room.phase !== 'lobby') return;
+        const k = m.kit, p = room.players.get(pid);
+        if (!Number.isInteger(k) || k < 0 || k >= KIT_COUNT || !p) return;
+        if (room.mode !== 'bot' && room.kits[1 - p.team] === k) return send(pid, { type: 'error', msg: 'Bu formayı rakip seçti.' });
+        room.kits[p.team] = k;
+        if (room.mode === 'bot' && room.kits[1] === k) room.kits[1] = (k + 1) % KIT_COUNT;
         broadcast(room);
         break;
       }

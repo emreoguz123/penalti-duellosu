@@ -58,6 +58,10 @@
       <button class="btn ghost" id="shareBtn">🔗 Davet linkini paylaş</button>
     </div>
     <div id="slots" class="slots"></div>
+    <div class="kits-box">
+      <div id="kitsTitle" class="small center">FORMANI SEÇ</div>
+      <div id="kits" class="kits"></div>
+    </div>
     <div id="lobbyNotice" class="notice"></div>
     <button class="btn primary" id="startBtn">Maçı Başlat</button>
     <div id="waitNote" class="small center"></div>
@@ -67,9 +71,9 @@
   <!-- OYUN -->
   <section id="game" class="screen hidden">
     <div class="scoreboard">
-      <div class="team t0"><div class="tname" id="tn0">A</div><div class="dots" id="dots0"></div></div>
+      <div class="team t0"><div class="tname"><span class="kb" id="kb0"></span><span id="tn0">A</span></div><div class="dots" id="dots0"></div></div>
       <div class="score"><span id="sc0">0</span><i>-</i><span id="sc1">0</span></div>
-      <div class="team t1"><div class="tname" id="tn1">B</div><div class="dots" id="dots1"></div></div>
+      <div class="team t1"><div class="tname"><span id="tn1">B</span><span class="kb" id="kb1"></span></div><div class="dots" id="dots1"></div></div>
     </div>
     <div class="statusbar">
       <div id="status" class="status">…</div>
@@ -92,6 +96,12 @@
           <radialGradient id="ballg" cx=".35" cy=".3" r=".75">
             <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c9d1d9"/>
           </radialGradient>
+          <pattern id="kitS" width="8" height="8" patternUnits="userSpaceOnUse">
+            <rect class="ka" width="8" height="8" fill="#facc15"/><rect class="kb" x="4" width="4" height="8" fill="#dc2626"/>
+          </pattern>
+          <pattern id="kitK" width="8" height="8" patternUnits="userSpaceOnUse">
+            <rect class="ka" width="8" height="8" fill="#facc15"/><rect class="kb" x="4" width="4" height="8" fill="#1e3a8a"/>
+          </pattern>
         </defs>
         <rect width="400" height="140" fill="url(#sky)"/>
         <g id="crowd"></g>
@@ -114,10 +124,10 @@
         <g id="keeper" transform="translate(200,142)">
           <path d="M-7 2 L-9 37 M7 2 L9 37" stroke="#1f2937" stroke-width="7" stroke-linecap="round"/>
           <ellipse cx="-9" cy="38" rx="6" ry="3" fill="#111"/><ellipse cx="9" cy="38" rx="6" ry="3" fill="#111"/>
-          <rect x="-12" y="-5" width="24" height="12" rx="3" fill="#111827"/>
+          <rect id="kshorts" x="-12" y="-5" width="24" height="12" rx="3" fill="#111827"/>
           <path id="karms" d="M-12 -27 L-30 -45 M12 -27 L30 -45" stroke="#f59e0b" stroke-width="6.5" stroke-linecap="round"/>
-          <rect x="-14" y="-32" width="28" height="30" rx="7" fill="#f59e0b"/>
-          <text x="0" y="-11" text-anchor="middle" font-size="12" font-weight="900" fill="#7c2d12">1</text>
+          <rect x="-14" y="-32" width="28" height="30" rx="7" fill="url(#kitK)" stroke="rgba(0,0,0,.35)" stroke-width="1"/>
+          <text x="0" y="-11" text-anchor="middle" font-size="12" font-weight="900" fill="#fff" stroke="#000" stroke-width="2" paint-order="stroke">1</text>
           <circle cx="-31" cy="-47" r="6.5" fill="#fff" stroke="#334155" stroke-width="1.5"/>
           <circle cx="31" cy="-47" r="6.5" fill="#fff" stroke="#334155" stroke-width="1.5"/>
           <circle cx="0" cy="-41" r="9" fill="#e5b48c"/>
@@ -131,6 +141,18 @@
           <rect x="56" y="36" width="6" height="146" rx="2"/>
           <rect x="338" y="36" width="6" height="146" rx="2"/>
           <rect x="56" y="36" width="288" height="6" rx="2"/>
+        </g>
+
+        <g id="shooter" transform="translate(150,314)">
+          <ellipse cx="0" cy="1" rx="14" ry="3.5" fill="rgba(0,0,0,.3)"/>
+          <path d="M-6 -22 L-7 -2 M6 -22 L7 -2" stroke="#e5b48c" stroke-width="5" stroke-linecap="round"/>
+          <path id="ssocks" d="M-7 -11 L-7 -2 M7 -11 L7 -2" stroke="#dc2626" stroke-width="5.5" stroke-linecap="round"/>
+          <ellipse cx="-7" cy="0" rx="4.5" ry="2.5" fill="#111"/><ellipse cx="7" cy="0" rx="4.5" ry="2.5" fill="#111"/>
+          <rect id="sshorts" x="-11" y="-30" width="22" height="11" rx="2" fill="#dc2626"/>
+          <path id="sarms" d="M-11 -52 L-17 -34 M11 -52 L17 -34" stroke="#facc15" stroke-width="5.5" stroke-linecap="round"/>
+          <rect x="-12" y="-56" width="24" height="28" rx="5" fill="url(#kitS)" stroke="rgba(0,0,0,.35)" stroke-width="1"/>
+          <text x="0" y="-37" text-anchor="middle" font-size="11" font-weight="900" fill="#fff" stroke="#000" stroke-width="2" paint-order="stroke">10</text>
+          <circle cx="0" cy="-63" r="7.5" fill="#3f2a1d"/>
         </g>
 
         <ellipse id="ballShadow" cx="200" cy="302" rx="12" ry="4" fill="rgba(0,0,0,.35)"/>

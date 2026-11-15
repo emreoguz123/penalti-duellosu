@@ -15,6 +15,22 @@ const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2)
 const linear = (t) => t;
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+// Takım formaları (server.js KIT_COUNT ile aynı sayıda olmalı)
+const KITS = [
+  { name: 'Sarı-Kırmızı', a: '#facc15', b: '#dc2626' },
+  { name: 'Sarı-Lacivert', a: '#facc15', b: '#1e3a8a' },
+  { name: 'Siyah-Beyaz', a: '#111111', b: '#f5f5f5' },
+  { name: 'Bordo-Mavi', a: '#7f1d1d', b: '#38bdf8' },
+  { name: 'Yeşil-Beyaz', a: '#15803d', b: '#f5f5f5' },
+];
+const JERSEY = 'M12 4 L4 9 L1 18 L8 21 L9 37 L31 37 L32 21 L39 18 L36 9 L28 4 Q20 9 12 4Z';
+function jerseySvg(i) {
+  const k = KITS[i] || KITS[0];
+  const stripes = [4, 12, 20, 28, 36].map((x) => `<rect x="${x}" width="4" height="40" fill="${k.b}"/>`).join('');
+  return `<svg viewBox="0 0 40 40"><defs><clipPath id="jc${i}"><path d="${JERSEY}"/></clipPath></defs>` +
+    `<g clip-path="url(#jc${i})"><rect width="40" height="40" fill="${k.a}"/>${stripes}</g>` +
+    `<path d="${JERSEY}" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1.4"/></svg>`;
+}
 const CELL_NAMES = ['Sol Üst', 'Orta Üst', 'Sağ Üst', 'Sol Alt', 'Orta Alt', 'Sağ Alt'];
 const GX = 62, GY = 42, CW = 92, CH = 69;          // kale içi geometri
 const SPOT = { x: 200, y: 292 };                     // penaltı noktası
@@ -151,7 +167,10 @@ function slotList(mode) {
 
 function renderLobby() {
   $('#lobbyCode').textContent = S.code;
-  $('#lobbyMode').textContent = S.mode === '2v2' ? '2v2 · Her takımda 1 şutör + 1 kaleci' : '1v1 · Sırayla şut & kaleci';
+  $('#lobbyMode').textContent = S.mode === '2v2' ? '2v2 · Her takımda 1 şutör + 1 kaleci' : S.mode === 'bot' ? 'Bota karşı · Formanı seç ve başlat' : '1v1 · Sırayla şut & kaleci';
+  $('#shareBtn').classList.toggle('hidden', S.mode === 'bot');
+  $('#lobbyCode').classList.toggle('hidden', S.mode === 'bot');
+  $('#lobbyCode').previousElementSibling.classList.toggle('hidden', S.mode === 'bot');
   $('#lobbyNotice').textContent = S.notice || '';
   const box = $('#slots');
   box.innerHTML = '';
@@ -159,17 +178,38 @@ function renderLobby() {
     const p = S.players.find((x) => x.team === t && x.role === r);
     const d = document.createElement('div');
     d.className = `slot t${t}${p ? ' filled' : ''}${p && p.pid === S.you ? ' me' : ''}`;
-    d.innerHTML = `<div class="lbl">${SLOT_LABELS[t + r]}</div>` + (p
+    d.innerHTML = `<div class="lbl"><span class="kb">${jerseySvg(S.kits[t])}</span>${SLOT_LABELS[t + r]}</div>` + (p
       ? `<div class="who">${p.pid === S.hostId ? '👑 ' : ''}${esc(p.name)}${p.connected ? '' : ' 📴'}</div>`
       : `<div class="who empty">Boş · buraya geç</div>`);
     if (!p) d.onclick = () => send({ type: 'slot', team: t, role: r });
     box.appendChild(d);
   }
+  renderKits();
   const full = slotList(S.mode).every(([t, r]) => S.players.some((x) => x.team === t && x.role === r));
   const host = S.hostId === S.you;
   $('#startBtn').classList.toggle('hidden', !host);
   $('#startBtn').disabled = !full;
   $('#waitNote').textContent = !full ? 'Oyuncular bekleniyor… Kodu arkadaşına gönder.' : host ? '' : 'Oda sahibinin başlatması bekleniyor…';
+}
+function renderKits() {
+  const me = S.players.find((p) => p.pid === S.you);
+  if (!me) return;
+  const mine = S.kits[me.team], theirs = S.kits[1 - me.team];
+  const bot = S.mode === 'bot';
+  $('#kitsTitle').textContent = S.mode === '2v2' ? 'TAKIM FORMASI' : 'FORMANI SEÇ';
+  const box = $('#kits');
+  box.innerHTML = '';
+  KITS.forEach((k, i) => {
+    const b = document.createElement('button');
+    const taken = !bot && i === theirs;
+    b.className = 'kit' + (i === mine ? ' sel' : '') + (taken ? ' taken' : '');
+    b.innerHTML = jerseySvg(i) + `<span>${k.name}</span>` + (i === mine ? '<small>Seçili</small>' : taken ? '<small>Rakip</small>' : '<small>&nbsp;</small>');
+    b.onclick = () => {
+      if (taken) return toast('Bu formayı rakip seçti');
+      if (i !== mine) { sfx.tick(); send({ type: 'kit', kit: i }); }
+    };
+    box.appendChild(b);
+  });
 }
 $('#startBtn').onclick = () => send({ type: 'start' });
 $('#leaveLobby').onclick = () => send({ type: 'leave' });
@@ -230,6 +270,25 @@ function setShadow(x, y, s = 1, op = 1) {
   shadowEl.setAttribute('rx', (12 * s).toFixed(1)); shadowEl.setAttribute('ry', (4 * s).toFixed(1));
   shadowEl.style.opacity = op;
 }
+const shooterEl = $('#shooter');
+const SHOOTER_HOME = { x: 150, y: 314 };
+function setShooter(x, y, r = 0) {
+  shooterEl.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${r.toFixed(1)})`);
+}
+function applyKits(shootingTeam) {
+  if (!S || !S.kits) return;
+  const ks = KITS[S.kits[shootingTeam]] || KITS[0], kk = KITS[S.kits[1 - shootingTeam]] || KITS[1];
+  const paint = (id, k) => {
+    document.querySelector(`#${id} .ka`).setAttribute('fill', k.a);
+    document.querySelector(`#${id} .kb`).setAttribute('fill', k.b);
+  };
+  paint('kitS', ks); paint('kitK', kk);
+  $('#sarms').setAttribute('stroke', ks.a);
+  $('#sshorts').setAttribute('fill', ks.b);
+  $('#ssocks').setAttribute('stroke', ks.a);
+  $('#karms').setAttribute('stroke', kk.a);
+  $('#kshorts').setAttribute('fill', kk.b);
+}
 function setKeeper(x, y, r = 0) {
   keeperEl.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${r.toFixed(1)})`);
 }
@@ -237,6 +296,7 @@ function resetScene() {
   setBall(SPOT.x, SPOT.y);
   setShadow(SPOT.x, SPOT.y + 10);
   setKeeper(KEEPER_HOME.x, KEEPER_HOME.y, 0);
+  setShooter(SHOOTER_HOME.x, SHOOTER_HOME.y);
   netEl.removeAttribute('transform');
   setMarks([]);
   cellEls.forEach((c) => c.setAttribute('class', 'cell'));
@@ -248,6 +308,7 @@ function onState(st) {
   if (st.phase === 'lobby') { cancelAnim(); hideOver(); show('lobby'); renderLobby(); return; }
   show('game');
   renderNames();
+  applyKits(st.reveal && st.phase !== 'select' ? st.reveal.shootingTeam : st.shootingTeam);
 
   if (st.phase === 'select') {
     if (st.kickNo !== lastKickNo) {
@@ -280,6 +341,8 @@ function teamName(t) {
 const nameOf = (pid) => { const p = S && S.players.find((x) => x.pid === pid); return p ? p.name : '?'; };
 
 function renderNames() {
+  $('#kb0').innerHTML = jerseySvg(S.kits[0]);
+  $('#kb1').innerHTML = jerseySvg(S.kits[1]);
   $('#tn0').textContent = teamName(0) + (S.players.some((p) => p.team === 0 && p.pid === S.you) ? ' (sen)' : '');
   $('#tn1').textContent = teamName(1) + (S.players.some((p) => p.team === 1 && p.pid === S.you) ? ' (sen)' : '');
 }
@@ -482,7 +545,13 @@ async function shoot(r, alive) {
 
   // koşu: top hafif titrer
   $('#status').textContent = `${r.shooterName} topun başında…`;
-  await tween(500, (e) => setBall(SPOT.x, SPOT.y - Math.sin(e * Math.PI * 3) * 1.5), linear);
+  setShooter(SHOOTER_HOME.x, SHOOTER_HOME.y);
+  await tween(550, (e) => {
+    setShooter(lerp(SHOOTER_HOME.x, 184, e), lerp(SHOOTER_HOME.y, 305, e) - Math.abs(Math.sin(e * Math.PI * 4)) * 3, 0);
+  }, linear);
+  if (!alive()) return;
+  // vuruş anı: hafif öne eğilme
+  tween(250, (e) => setShooter(184, 305, Math.sin(e * Math.PI) * 10));
   if (!alive()) return;
   sfx.kick();
   $('#status').textContent = 'ŞUT!';
